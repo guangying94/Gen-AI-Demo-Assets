@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Sample Web Chat with Speech</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        h1 {
+            color: whitesmoke;
+            font-family: Segoe UI;
+            font-size: 16px;
+            line-height: 20px;
+            margin: 0;
+            padding: 0 20px;
+        }
+
+        #banner {
+            align-items: center;
+            background-color: black;
+            display: flex;
+            height: 50px;
+        }
+
+        #webchat {
+            height: calc(100% - 50px);
+            overflow: hidden;
+            position: fixed;
+            top: 50px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div id="banner">
+            <h1>Demo Bot</h1>
+        </div>
+        <div id="webchat" role="main"></div>
+    </div>
+
+    <script crossorigin="anonymous" src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+
+    <script>
+        (async function () {
+
+            const styleOptions = {
+                hideUploadButton: true
+            };
+
+            // directline token endpoint from copilot studio
+            // sample: https://xxxxxxxxxx.40.environment.api.powerplatform.com/powervirtualagents/botsbyschema/Default_testdemo/directline/token?api-version=2022-03-01-preview
+            const tokenEndpointURL = new URL('<direct-line-token-endpoint>');
+
+            const locale = document.documentElement.lang || 'en';
+
+            const apiVersion = tokenEndpointURL.searchParams.get('api-version');
+
+            const [directLineURL, token] = await Promise.all([
+                fetch(new URL(`/powervirtualagents/regionalchannelsettings?api-version=${apiVersion}`, tokenEndpointURL))
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to retrieve regional channel settings.');
+                        }
+                        return response.json();
+                    })
+                    .then(({ channelUrlsById: { directline } }) => directline),
+                fetch(tokenEndpointURL)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to retrieve Direct Line token.');
+                        }
+
+                        return response.json();
+                    })
+                    .then(({ token }) => token)
+            ]);
+
+            const directLine = WebChat.createDirectLine({ domain: new URL('v3/directline', directLineURL), token });
+
+            function createFetchSpeechServicesCredentials() {
+                return () => {
+                    return Promise.resolve({
+                        region: '<azure-ai-speech-region>', // sample: 'southeastasia'
+                        subscriptionKey: '<azure-ai-speech-key>' // sample: '0123456789abcdef0123456789abcdef'
+                    });
+                };
+            }
+
+            const fetchSpeechServicesCredentials = createFetchSpeechServicesCredentials();
+
+            const webSpeechPonyfillFactory = await window.WebChat.createCognitiveServicesSpeechServicesPonyfillFactory({
+                credentials: fetchSpeechServicesCredentials
+            });
+
+            const subscription = directLine.connectionStatus$.subscribe({
+                next(value) {
+                    if (value === 2) {
+                        directLine
+                            .postActivity({
+                                localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                locale,
+                                name: 'startConversation',
+                                type: 'event'
+                            })
+                            .subscribe();
+
+                        subscription.unsubscribe();
+                    }
+                }
+            });
+
+            WebChat.renderWebChat({ directLine, webSpeechPonyfillFactory, locale, styleOptions }, document.getElementById('webchat'));
+        })();
+    </script>
+</body>
+</html>
