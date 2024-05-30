@@ -1,4 +1,7 @@
 # Repository for Generative AI related demo assets
 This repository contains demo assets, materials, and code for the Generative AI related projects.
 
-## Projects
+## Ready Demo
+1. [Chat With Video](./chat-with-video/README.md)
+2. [Copilot Studio with Speech](./copilot-studio-with-speech/README.md)
+3. [Forms Extraction and Approval](./forms-extraction-approval/README.md)
