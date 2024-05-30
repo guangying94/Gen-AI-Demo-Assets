@@ -1,0 +1,7 @@
+###
+POST http://localhost:5000/convert-pdf
+Content-Type: application/json
+
+{
+    "pdf_url":"https://test.blob.core.windows.net/medicalcertificate/mc.pdf"
+}

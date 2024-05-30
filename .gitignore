@@ -1,2 +1,9 @@
 config.json
 .DS_Store
+__pycache__/
+
+pf-venv/
+venv/
+
+news-copilot-summarizer/*
+news-copilot-summarizer/Prompt Flow/news-summary/.promptflow/flow.layout.json
