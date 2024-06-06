@@ -1,14 +1,19 @@
 import os
 import requests
 import json
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 from datetime import datetime, timedelta, timezone
 import fitz
+import base64
+
 
 BLOB_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
+STORAGE_ACCOUNT_NAME = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
 CONTAINER_NAME = os.getenv('AZURE_CONTAINER_NAME')
 GPT4_KEY = os.getenv('GPT4_KEY')
 GPT4_ENDPOINT = os.getenv('GPT4_ENDPOINT')
+
 
 def convert_pdf_to_images_and_upload(pdf_document, current):
     """
@@ -162,3 +167,117 @@ def process_json_response(response):
     message_json = json.loads(message_str)
     
     return message_json
+
+def convert_pdf_to_images_and_generate_binary(pdf_container, pdf_name, save_images, current):
+    """
+    This function converts a PDF file stored in Azure Blob Storage into a list of base64-encoded images, one for each page of the PDF.
+    It also has the option to save these images back to Blob Storage.
+
+    Parameters:
+    pdf_container (str): The name of the Blob Storage container where the PDF is stored.
+    pdf_name (str): The name of the PDF file in Blob Storage.
+    save_images (bool): If True, the function will save the generated images to Blob Storage.
+    current (str): A string used to generate the names of the saved images. The name of each image will be in the format '{current}_{page_number}.png'.
+
+    Returns:
+    images_base64_list (list of str): A list of base64-encoded strings, each representing an image of a page from the PDF.
+
+    Note:
+    This function uses Managed Identity for authentication with Blob Storage. The Managed Identity must have the necessary permissions to read from the PDF container and, if save_images is True, write to the images container.
+    """
+    credential = DefaultAzureCredential()
+    blob_service_client = BlobServiceClient(account_url=f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net", credential=credential)
+    print("Authenticated using managed identity successfully.")
+
+    images_base64_list = []
+    pdf_blob_client = blob_service_client.get_blob_client(container=pdf_container, blob=pdf_name)
+    pdf_stream = pdf_blob_client.download_blob().readall()
+    pdf_document = fitz.open(stream=pdf_stream, filetype='pdf')
+
+    for page_number in range(len(pdf_document)):
+        page = pdf_document[page_number]
+        zoom_x = 2.0
+        zoom_y = 2.0
+        matrix = fitz.Matrix(zoom_x, zoom_y)
+
+        pix = page.get_pixmap(matrix=matrix)
+        image_bytes = pix.tobytes('png')
+
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        images_base64_list.append(base64_image)
+
+        if(save_images):
+            image_blob_name = f'{current}_{page_number}.png'
+            image_blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=image_blob_name)
+            image_blob_client.upload_blob(image_bytes, blob_type="BlockBlob",overwrite=True)
+    
+    return images_base64_list
+
+def process_with_gpt4_binary(images_base64_list):
+    """
+    This function sends a request to the GPT-4 API to process a list of base64-encoded images. 
+    It constructs a JSON payload containing the images and a request to extract specific information from them, 
+    and sends this payload to the GPT-4 API. The function then processes the JSON response from the API.
+
+    Parameters:
+    images_base64_list (list of str): A list of base64-encoded strings, each representing an image.
+
+    Returns:
+    dict: A dictionary containing the processed information extracted from the images.
+
+    Note:
+    This function requires the GPT-4 API key to be stored in the GPT4_KEY environment variable, 
+    and the GPT-4 API endpoint to be stored in the GPT4_ENDPOINT environment variable.
+    """
+    print("Processing with GPT-4o..")
+
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": GPT4_KEY
+    }
+
+    payload = {
+        "messages":[
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "You are an AI assistant that extract information from medical certificate. You only response as JSON."
+                    
+                    }
+                ]
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": 
+                        {
+                            "url": f"data:image/png;base64,{base64_images}"
+                        }
+                    } for base64_images in images_base64_list
+                ] + [
+                    {
+                        "type": "text",
+                        "text": "extract patient name, NRIC, hospital name, leave date and duration. for NRIC, only keep the last 4 characters. reply in JSON. Sample response: {\"name\": \"name\", \"NRIC\": \"123D\", \"hospital\": \"hospital\", \"duration_day\": 3, \"from_date\": \"2024-01-01\", \"to_date\": \"2024-01-02\"}. "
+                    }
+                ]
+            }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 800,
+        "top_p": 0.95,
+    }
+
+    # Send the request to GPT-4
+    try:
+        response = requests.post(GPT4_ENDPOINT, headers=headers, json=payload)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Error processing with GPT-4: {e}")
+    
+    return process_json_response(response)
+
+

@@ -8,6 +8,10 @@ import json
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({"message": "PDF extraction API is running"})
+
 @app.route('/convert-pdf', methods=['POST'])
 def convert_pdf_to_image():
 
@@ -41,6 +45,24 @@ def convert_pdf_to_image():
     gptresult_json = json.loads(gptresult)
     
     return jsonify({"result": gptresult_json, "pdf_img_urls": sas_urls,"processed_datetime": current})
+
+@app.route('/process-private', methods=['POST'])
+def process_image_binary():
+    current = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S")
+
+    pdf_container = request.json['pdf_container']
+    pdf_name = request.json['pdf_name']
+    save_images = request.json['save_images']
+
+    # Read pdf from azure storage directly
+    imagebase64_list = helper.convert_pdf_to_images_and_generate_binary(pdf_container, pdf_name, save_images, current)
+
+    # process with GPT4
+    _gptresult = helper.process_with_gpt4_binary(imagebase64_list)
+    gptresult = _gptresult.replace("\\\"", "\"")
+    gptresult_json = json.loads(gptresult)
+
+    return jsonify({"result": gptresult_json, "processed_datetime": current})
 
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0', port=5000)

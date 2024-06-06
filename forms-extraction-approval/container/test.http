@@ -3,5 +3,17 @@ POST http://localhost:5000/convert-pdf
 Content-Type: application/json
 
 {
-    "pdf_url":"https://test.blob.core.windows.net/medicalcertificate/mc.pdf"
+    "pdf_url":"https://guteeaoaiassets.blob.core.windows.net/medicalcertificate/mc.pdf"
+}
+
+
+
+###
+POST http://localhost:5000/process-private
+Content-Type: application/json
+
+{
+    "pdf_container":"medicalcertificate",
+    "pdf_name":"mc.pdf",
+    "save_images": true
 }
