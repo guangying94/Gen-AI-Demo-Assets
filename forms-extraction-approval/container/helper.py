@@ -13,6 +13,8 @@ STORAGE_ACCOUNT_NAME = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
 CONTAINER_NAME = os.getenv('AZURE_CONTAINER_NAME')
 GPT4_KEY = os.getenv('GPT4_KEY')
 GPT4_ENDPOINT = os.getenv('GPT4_ENDPOINT')
+SYSTEM_PROMPT = os.getenv('SYSTEM_PROMPT')
+USER_PROMPT = os.getenv('USER_PROMPT')
 
 
 def convert_pdf_to_images_and_upload(pdf_document, current):
@@ -100,7 +102,7 @@ def process_with_gpt4(urls):
                 "content": [
                     {
                         "type": "text",
-                        "text": "You are an AI assistant that extract information from medical certificate. You only response as JSON."
+                        "text": SYSTEM_PROMPT
                     
                     }
                 ]
@@ -118,7 +120,7 @@ def process_with_gpt4(urls):
                 ] + [
                     {
                         "type": "text",
-                        "text": "extract patient name, NRIC, hospital name, leave date and duration. for NRIC, only keep the last 4 characters. reply in JSON. Sample response: {\"name\": \"name\", \"NRIC\": \"123D\", \"hospital\": \"hospital\", \"duration_day\": 3, \"from_date\": \"2024-01-01\", \"to_date\": \"2024-01-02\"}. "
+                        "text": USER_PROMPT
                     }
                 ]
             }
@@ -243,7 +245,7 @@ def process_with_gpt4_binary(images_base64_list):
                 "content": [
                     {
                         "type": "text",
-                        "text": "You are an AI assistant that extract information from medical certificate. You only response as JSON."
+                        "text": SYSTEM_PROMPT
                     
                     }
                 ]
@@ -261,7 +263,7 @@ def process_with_gpt4_binary(images_base64_list):
                 ] + [
                     {
                         "type": "text",
-                        "text": "extract patient name, NRIC, hospital name, leave date and duration. for NRIC, only keep the last 4 characters. reply in JSON. Sample response: {\"name\": \"name\", \"NRIC\": \"123D\", \"hospital\": \"hospital\", \"duration_day\": 3, \"from_date\": \"2024-01-01\", \"to_date\": \"2024-01-02\"}. "
+                        "text": USER_PROMPT
                     }
                 ]
             }

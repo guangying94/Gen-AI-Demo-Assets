@@ -1,0 +1,6 @@
+.chatContainer {
+    height: 75vh; /* Example of setting height to 75% of the viewport height */
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}

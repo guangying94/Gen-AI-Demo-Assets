@@ -20,6 +20,8 @@ The API is built using Flask, written in Python. Provide the following environme
 | AZURE_CONTAINER_NAME  | Azure Storage Container name to store images  |
 |GPT4_ENDPOINT | Azure Open AI GPT4o model endpoint, including the model deployment name. Example: https://azureopenaidemo.openai.azure.com/openai/deployments/gpt4o/chat/completions?api-version=2024-02-15-preview|
 |GPT4_KEY | Azure Open AI GPT4o API key|
+|SYSTEM_PROMPT| System prompt to be used by GPT4o model. Sample:"You are an AI assistant that extract information from medical certificate. You only response as JSON." |
+|USER_PROMPT| User prompt to be used by GPT4o model. Sample: "extract patient name, NRIC, hospital name, leave date and duration. for NRIC, only keep the last 4 characters. reply in JSON. Sample response: {\"name\": \"name\", \"NRIC\": \"123D\", \"hospital\": \"hospital\", \"duration_day\": 3, \"from_date\": \"2024-01-01\", \"to_date\": \"2024-01-02\"}."|
 
 Run the following command to start the API
 ```bash
