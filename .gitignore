@@ -7,3 +7,5 @@ venv/
 
 news-copilot-summarizer/*
 news-copilot-summarizer/Prompt Flow/news-summary/.promptflow/flow.layout.json
+
+.env
