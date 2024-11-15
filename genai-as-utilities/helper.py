@@ -5,6 +5,7 @@ from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPerm
 from datetime import datetime, timedelta, timezone
 import fitz
 from docs_intelligence_helper import analyze_read
+from sql_helper import fetch_data_from_azure_sql
 import io
 
 load_dotenv()
@@ -186,3 +187,46 @@ def extract_content_from_images(system_prompts, sas_urls, di_content=None):
         # Handle exceptions and print the error message
         print(f"Error: {e}")
         return None
+    
+def chat_with_azure_sql(query, server, database, username, password):
+    # Fetch the schema data from Azure SQL Database
+    get_schema_query = """
+    SELECT 
+        TABLE_SCHEMA,
+        TABLE_NAME,
+        STRING_AGG(CONCAT(COLUMN_NAME, ' (', DATA_TYPE, ')'), ', ') AS COLUMNS
+    FROM 
+        INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA != 'sys'
+    GROUP BY 
+        TABLE_SCHEMA, TABLE_NAME
+    ORDER BY 
+        TABLE_SCHEMA, TABLE_NAME;
+    """
+    schema_data = fetch_data_from_azure_sql(get_schema_query, server, database, username, password)
+
+    system_prompt_to_create_query = f"""
+    You are an AI assistant that creates t-sql query based on azure sql database. 
+    You will be given table schema, and the user query. You will response with the t-sql query to fetch the data based on the user query.
+    Only respond with the t-sql query, do not include explanation.
+    table schema: {schema_data}
+    """
+
+    generated_sql_query = call_aoai(system_prompt_to_create_query, query)
+    generated_sql_query = generated_sql_query.replace("```sql", "").replace("```", "")
+    print(generated_sql_query)
+
+    # Execute the sql query and fetch the data
+    data = fetch_data_from_azure_sql(generated_sql_query, server, database, username, password)
+    print(data)
+
+    # Generate the response message
+    system_prompt_to_response = f"""
+    You are an AI assistant that generate user response based on the data fetched from azure sql database.
+    You will be given the data fetched from the database. You will response with the user response.
+    You only answer based on data, and says 'I don't have access to the data' if the data is empty.
+    data: {data}
+    """
+
+    response = call_aoai(system_prompt_to_response, query)
+    return response, generated_sql_query

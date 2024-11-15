@@ -6,6 +6,7 @@ The app is built based on Python streamlit as frontend, and developer can custom
 ## Capability
 1. Multi-level classification
 2. Entity extraction from form (with options to leverage Azure Document Intelligence as enhancement)
+3. Chat With Database - perform retrival augmented generation from database
 
 ## How to use this code
 Create a python virtual environment and install the required packages.
@@ -14,6 +15,8 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+In addition, you will need to install **ODBC driver for SQL Server**. You can follow the instruction [here](https://learn.microsoft.com/en-us/sql/connect/odbc/microsoft-odbc-driver-for-sql-server?view=sql-server-ver16).
 
 Create a .env file and set the following environment variables. Replace with your own values
 ```bash

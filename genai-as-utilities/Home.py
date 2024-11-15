@@ -13,3 +13,7 @@ if content_extraction:
 feedback_classification = st.button('🗣️ Feedback Classification')
 if feedback_classification:
     switch_page('Feedback')
+
+chat_with_database = st.button('📊 Chat With Database')
+if chat_with_database:
+    switch_page('Chat_With_Database')
