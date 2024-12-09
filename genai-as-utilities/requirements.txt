@@ -7,3 +7,4 @@ streamlit-extras
 azure-ai-documentintelligence==1.0.0b4
 azure-ai-formrecognizer
 pyodbc
+azure-identity

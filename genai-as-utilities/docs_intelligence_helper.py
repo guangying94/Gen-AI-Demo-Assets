@@ -32,5 +32,6 @@ def analyze_read(document_url):
     print("----------------------------------------")
     # Print all the detected content
     print(detected_content)
+        
     # Return the detected content
     return detected_content

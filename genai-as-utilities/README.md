@@ -7,6 +7,7 @@ The app is built based on Python streamlit as frontend, and developer can custom
 1. Multi-level classification
 2. Entity extraction from form (with options to leverage Azure Document Intelligence as enhancement)
 3. Chat With Database - perform retrival augmented generation from database
+4. Chat With Document With Images - perform retrival augmented generation from document with images
 
 ## How to use this code
 Create a python virtual environment and install the required packages.
@@ -29,6 +30,11 @@ GPT4O_MODEL_DEPLOYMENT_NAME=gpt4o-global
 GPT4O_MINI_MODEL_DEPLOYMENT_NAME=gpt-4o-mini-global
 DOCS_INTELLIGENCE_ENDPOINT=https://xxxxxxxx.cognitiveservices.azure.com/
 DOCS_INTELLIGENCE_KEY=xxxxxx
+AI_SEARCH_ENDPOINT=https://xxxxx.search.windows.net
+AI_SEARCH_KEY=xxxxx
+AI_SEARCH_INDEX=xxxxx
+AI_GEN_SEARCH_INDEX=xxxxx
+
 ```
 
 Then, run the app using streamlit command.

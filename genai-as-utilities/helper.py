@@ -7,6 +7,7 @@ import fitz
 from docs_intelligence_helper import analyze_read
 from sql_helper import fetch_data_from_azure_sql
 import io
+from azure.identity import DefaultAzureCredential
 
 load_dotenv()
 
@@ -14,7 +15,6 @@ AOAI_KEY = os.getenv('AOAI_KEY')
 AOAI_ENDPOINT = os.getenv('AOAI_ENDPOINT')
 GPT4O_MODEL_DEPLOYMENT_NAME = os.getenv('GPT4O_MODEL_DEPLOYMENT_NAME')
 GPT4O_MINI_MODEL_DEPLOYMENT_NAME = os.getenv('GPT4O_MINI_MODEL_DEPLOYMENT_NAME')
-BLOB_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
 STORAGE_ACCOUNT_NAME = os.getenv('AZURE_STORAGE_ACCOUNT_NAME')
 CONTAINER_NAME = os.getenv('AZURE_STORAGE_CONTAINER_NAME')
 
@@ -58,9 +58,11 @@ def convert_pdf_to_images_and_upload(pdf_document, current, use_document_intelli
         pdf_url = upload_pdf_to_blob(pdf_document, current)
         # Analyze the PDF content using Azure Document Intelligence
         di_content = analyze_read(pdf_url)
+    
+    credential = DefaultAzureCredential()
 
-    # Create a BlobServiceClient using the connection string
-    blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
+    # Create a BlobServiceClient using the service principal
+    blob_service_client = BlobServiceClient(account_url=f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net", credential=credential)
     
     # Iterate over each page in the PDF document
     for page_number in range(len(pdf_document)):
@@ -82,12 +84,18 @@ def convert_pdf_to_images_and_upload(pdf_document, current, use_document_intelli
         # Upload the image to Azure Blob Storage, overwriting if it exists
         image_blob_client.upload_blob(image_bytes, blob_type="BlockBlob", overwrite=True)
 
+        user_delegation_key = blob_service_client.get_user_delegation_key(
+            key_start_time=datetime.now(timezone.utc),
+            key_expiry_time=datetime.now(timezone.utc) + timedelta(hours=1)
+        )
+
         # Generate a SAS token with read permission, valid for 60 minutes
         sas_token = generate_blob_sas(
             blob_service_client.account_name,
             CONTAINER_NAME,
             image_blob_name,
-            account_key=blob_service_client.credential.account_key,
+            #account_key=blob_service_client.credential.account_key,
+            user_delegation_key=user_delegation_key,
             permission=BlobSasPermissions(read=True),
             expiry=datetime.now(timezone.utc) + timedelta(minutes=60),
             start=datetime.now(timezone.utc)
@@ -107,9 +115,11 @@ def upload_pdf_to_blob(pdf_document, current):
     pdf_bytes = io.BytesIO()
     pdf_document.save(pdf_bytes)
     pdf_bytes.seek(0)  # Reset the buffer position to the beginning
+
+    credential = DefaultAzureCredential()
     
-    # Create a BlobServiceClient using the connection string
-    blob_service_client = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
+    # Create a BlobServiceClient using the service principal
+    blob_service_client = BlobServiceClient(account_url=f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net", credential=credential)
     
     # Define the PDF file name in the blob storage
     pdf_name = f'{current}-uploaded.pdf'
@@ -117,13 +127,19 @@ def upload_pdf_to_blob(pdf_document, current):
     pdf_blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=pdf_name)
     # Upload the PDF bytes to Azure Blob Storage, overwriting if it exists
     pdf_blob_client.upload_blob(pdf_bytes, blob_type="BlockBlob", overwrite=True)
+
+    user_delegation_key = blob_service_client.get_user_delegation_key(
+        key_start_time=datetime.now(timezone.utc),
+        key_expiry_time=datetime.now(timezone.utc) + timedelta(hours=1)
+    )
     
     # Generate a SAS token with read permission, valid for 60 minutes
     sas_token = generate_blob_sas(
         blob_service_client.account_name,
         CONTAINER_NAME,
         pdf_name,
-        account_key=blob_service_client.credential.account_key,
+        #account_key=blob_service_client.credential.account_key,
+        user_delegation_key=user_delegation_key,
         permission=BlobSasPermissions(read=True),
         expiry=datetime.now(timezone.utc) + timedelta(minutes=60),
         start=datetime.now(timezone.utc)

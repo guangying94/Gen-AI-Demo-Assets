@@ -17,3 +17,7 @@ if feedback_classification:
 chat_with_database = st.button('📊 Chat With Database')
 if chat_with_database:
     switch_page('Chat_With_Database')
+
+docs_with_images = st.button('🏞️ Docs With Images')
+if docs_with_images:
+    switch_page('Docs_With_Images')
