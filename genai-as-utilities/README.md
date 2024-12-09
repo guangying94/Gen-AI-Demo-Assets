@@ -19,6 +19,19 @@ pip install -r requirements.txt
 
 In addition, you will need to install **ODBC driver for SQL Server**. You can follow the instruction [here](https://learn.microsoft.com/en-us/sql/connect/odbc/microsoft-odbc-driver-for-sql-server?view=sql-server-ver16).
 
+#### Notes for Azure SQL
+The code for Azure SQL uses service principle / managed identity for authentication. Execute following command inside database to create a user and grant permission.
+```sql
+-- Execute in master database
+CREATE LOGIN [sp-mi-name] FROM EXTERNAL PROVIDER;
+
+-- Execute in the database
+CREATE USER [bim-autogen-backend] FROM LOGIN [sp-mi-name];
+ALTER ROLE db_datareader ADD MEMBER [sp-mi-name];
+ALTER ROLE db_datawriter ADD MEMBER [sp-mi-name];
+GRANT EXECUTE TO [sp-mi-name];
+```
+
 Create a .env file and set the following environment variables. Replace with your own values
 ```bash
 AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=https;AccountName=xxxx;AccountKey=xxxx;EndpointSuffix=core.windows.net'

@@ -204,7 +204,7 @@ def extract_content_from_images(system_prompts, sas_urls, di_content=None):
         print(f"Error: {e}")
         return None
     
-def chat_with_azure_sql(query, server, database, username, password):
+def chat_with_azure_sql(query, server, database):
     # Fetch the schema data from Azure SQL Database
     get_schema_query = """
     SELECT 
@@ -219,7 +219,7 @@ def chat_with_azure_sql(query, server, database, username, password):
     ORDER BY 
         TABLE_SCHEMA, TABLE_NAME;
     """
-    schema_data = fetch_data_from_azure_sql(get_schema_query, server, database, username, password)
+    schema_data = fetch_data_from_azure_sql(get_schema_query, server, database)
 
     system_prompt_to_create_query = f"""
     You are an AI assistant that creates t-sql query based on azure sql database. 
@@ -233,7 +233,7 @@ def chat_with_azure_sql(query, server, database, username, password):
     print(generated_sql_query)
 
     # Execute the sql query and fetch the data
-    data = fetch_data_from_azure_sql(generated_sql_query, server, database, username, password)
+    data = fetch_data_from_azure_sql(generated_sql_query, server, database)
     print(data)
 
     # Generate the response message
