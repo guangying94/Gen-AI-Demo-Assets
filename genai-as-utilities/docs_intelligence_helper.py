@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 from azure.core.credentials import AzureKeyCredential
-from azure.ai.formrecognizer import DocumentAnalysisClient
+from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.ai.documentintelligence.models import AnalyzeDocumentRequest, DocumentAnalysisFeature
 
 load_dotenv()
 
@@ -9,11 +10,14 @@ endpoint = os.environ["DOCS_INTELLIGENCE_ENDPOINT"]
 key = os.environ["DOCS_INTELLIGENCE_KEY"]
 
 def analyze_read(document_url):
-    # Create a DocumentAnalysisClient with the given endpoint and credentials
-    document_analysis_client = DocumentAnalysisClient(endpoint=endpoint, credential=AzureKeyCredential(key))
-    
+    docs_intelligence_client = DocumentIntelligenceClient(endpoint=endpoint, credential=AzureKeyCredential(key))
+    docs_request = AnalyzeDocumentRequest(url_source=document_url)
+
+    # Add the feature to extract text
+    docs_analysis_feature = [DocumentAnalysisFeature.OCR_HIGH_RESOLUTION, DocumentAnalysisFeature.LANGUAGES]
+
     # Start the analysis of the document from the URL using the "prebuilt-read" model
-    poller = document_analysis_client.begin_analyze_document_from_url("prebuilt-read", document_url=document_url)
+    poller = docs_intelligence_client.begin_analyze_document("prebuilt-read", docs_request, features=docs_analysis_feature)
 
     # Retrieve the result of the analysis
     result = poller.result()

@@ -4,7 +4,6 @@ python-dotenv
 azure-storage-blob
 pymupdf
 streamlit-extras
-azure-ai-documentintelligence==1.0.0b4
-azure-ai-formrecognizer
+azure-ai-documentintelligence==1.0.0
 pyodbc
 azure-identity

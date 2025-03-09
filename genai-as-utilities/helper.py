@@ -150,6 +150,43 @@ def upload_pdf_to_blob(pdf_document, current):
     # Return the SAS URL
     return blob_sas_url
 
+def upload_image_to_blob(image_name, image_byte, current):
+    credential = DefaultAzureCredential()
+    
+    # Create a BlobServiceClient using the service principal
+    blob_service_client = BlobServiceClient(account_url=f"https://{STORAGE_ACCOUNT_NAME}.blob.core.windows.net", credential=credential)
+    
+    # Define the image name in the blob storage
+    img_name = f'{current}-{image_name}'
+
+    # Get a blob client for the image
+    img_blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob=img_name)
+
+    # Upload the image bytes to Azure Blob Storage, overwriting if it exists
+    img_blob_client.upload_blob(image_byte, blob_type="BlockBlob", overwrite=True)
+
+    user_delegation_key = blob_service_client.get_user_delegation_key(
+        key_start_time=datetime.now(timezone.utc),
+        key_expiry_time=datetime.now(timezone.utc) + timedelta(hours=1)
+    )
+    
+    # Generate a SAS token with read permission, valid for 60 minutes
+    sas_token = generate_blob_sas(
+        blob_service_client.account_name,
+        CONTAINER_NAME,
+        img_name,
+        #account_key=blob_service_client.credential.account_key,
+        user_delegation_key=user_delegation_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.now(timezone.utc) + timedelta(minutes=60),
+        start=datetime.now(timezone.utc)
+    )
+    
+    # Construct the SAS URL for the uploaded PDF
+    blob_sas_url = f"https://{blob_service_client.account_name}.blob.core.windows.net/{CONTAINER_NAME}/{img_name}?{sas_token}"
+    # Return the SAS URL
+    return blob_sas_url
+
 def extract_content_from_images(system_prompts, sas_urls, di_content=None):
     # Create an AzureOpenAI client using the API key, version, and endpoint
     client = AzureOpenAI(
