@@ -1,0 +1,6 @@
+python-dotenv
+uvicorn
+pydantic
+fastmcp
+pyodbc
+azure-identity

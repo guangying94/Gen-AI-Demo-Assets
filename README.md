@@ -6,3 +6,4 @@ This repository contains demo assets, materials, and code for the Generative AI 
 2. [Copilot Studio with Speech](./copilot-studio-with-speech/README.md)
 3. [Forms Extraction and Approval](./forms-extraction-approval/README.md)
 4. [Common Utilities Using Azure Open AI](./genai-as-utilities/README.md)
+5. [MCP Server for Azure SQL](./mcp-server/mcp-azure-sql/README.md)
